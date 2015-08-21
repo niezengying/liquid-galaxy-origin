@@ -16,13 +16,13 @@
 
 define(
 [
-  'config', 'bigl', 'stapes', 'mapstyle', 'googlemaps', 'sv_svc',
+  'config', 'bigl', 'stapes', 'mapstyle', 'mergemaps', 'sv_svc',
   // map submodules
   'map/coverage', 'map/svmarker', 'map/clicksearch', 'map/poimarkers',
   'map/earthpos'
 ],
 function(
-  config, L, Stapes, PeruseMapStyles, GMaps, sv_svc,
+  config, L, Stapes, PeruseMapStyles, XMaps, sv_svc,
   // map submodules
   SVCoverageModule, SVMarkerModule, ClickSearchModule, POIMarkerModule,
   EarthPosModule
@@ -39,35 +39,33 @@ function(
 
       var self = this;
 
-      if (typeof GMaps === 'undefined') L.error('Maps API not loaded!');
-
-      this.default_center = new GMaps.LatLng(
-        config.touchscreen.default_center[0],
-        config.touchscreen.default_center[1]
+      if (typeof XMaps === 'undefined') L.error('Maps API not loaded!');
+    
+   // this.provider = XMaps.apiProvider - 1;
+      this.default_center = new XMaps.LatLng(
+        config.touchscreen.default_center[XMaps.apiProvider - 1].lat,
+        config.touchscreen.default_center[XMaps.apiProvider - 1].lng
       );
 
       // use the improved visuals from the maps preview
-      GMaps.visualRefresh = true;
+      XMaps.visualRefresh = true;
 
       var mapOptions = {
         backgroundColor: "black",
-        center: this.default_center,
-        zoom: 14,
         disableDefaultUI: true,
         mapTypeControl: config.touchscreen.show_maptypectl,
         mapTypeControlOptions: {
-          mapTypeIds: [ GMaps.MapTypeId.ROADMAP, GMaps.MapTypeId.HYBRID ],
-          position: GMaps.ControlPosition.TOP_LEFT
+          mapTypeIds: [ XMaps.MapTypeId.ROADMAP, XMaps.MapTypeId.HYBRID ],
+          position: XMaps.ControlPosition.TOP_LEFT
         },
-        mapTypeId: GMaps.MapTypeId[config.touchscreen.default_maptype]
+        mapTypeId: XMaps.MapTypeId[config.touchscreen.default_maptype],
+        styles: PeruseMapStyles
       };
-
-      this.map = new GMaps.Map(
-        this.$canvas,
-        mapOptions
-      );
-
-      this.map.setOptions({styles: PeruseMapStyles});
+      var zoom = config.touchscreen.zoom[XMaps.apiProvider - 1];
+      this.map = new XMaps.Map(this.$canvas,mapOptions);
+      this.map.centerAndZoom(this.default_center, zoom);
+      this.map.setOptions(mapOptions);
+     // this.map.setOptions({styles: PeruseMapStyles});
 
       // instantiate map modules
       this.sv_coverage = new SVCoverageModule(this.map);
@@ -90,12 +88,11 @@ function(
       this.click_search.on('search_result', function(panodata) {
         var latlng = panodata.location.latLng;
         var panoid = panodata.location.pano;
-
         self._broadcast_pano(panoid);
         self._pan_map(latlng);
         self.sv_marker.move(latlng);
       });
-
+      
       // handler for earth position report
       this.earth_pos.on('found_location', function(panodata) {
         var latlng = panodata.location.latLng;
@@ -107,7 +104,7 @@ function(
       });
 
       // disable all <a> tags on the map canvas
-      GMaps.event.addListener(this.map, 'idle', function() {
+     XMaps.addListener(this.map, 'idle', function() {
         var links = self.$canvas.getElementsByTagName("a");
         var len = links.length;
         for (var i = 0; i < len; i++) {
@@ -117,7 +114,7 @@ function(
       });
 
       // signal that the map is ready
-      GMaps.event.addListenerOnce(this.map, 'idle', function() {
+      XMaps.addListenerOnce(this.map, 'idle', function() {
         console.debug('Map: ready');
         self.emit('ready');
       });
@@ -142,7 +139,7 @@ function(
       sv_svc.getPanoramaById(
         panoid,
         function (data, stat) {
-          if (stat == GMaps.StreetViewStatus.OK) {
+          if (stat == XMaps.StreetViewStatus.OK) {
             sv_svc.serializePanoData(data);
             self.emit('meta', data);
           }
@@ -163,10 +160,9 @@ function(
       sv_svc.getPanoramaById(
         panoid,
         function (data, stat) {
-          if(stat == GMaps.StreetViewStatus.OK) {
+          if(stat == XMaps.StreetViewStatus.OK) {
             var result_latlng = data.location.latLng;
             var result_panoid = data.location.pano;
-
             self._broadcast_pano(result_panoid);
             self._pan_map(result_latlng);
             self.sv_marker.hide();
@@ -185,7 +181,7 @@ function(
       sv_svc.getPanoramaById(
         panoid,
         function (data, stat) {
-          if(stat == GMaps.StreetViewStatus.OK) {
+          if(stat == XMaps.StreetViewStatus.OK) {
             var result_latlng = data.location.latLng;
             var result_panoid = data.location.pano;
 

@@ -15,8 +15,8 @@
 */
 
 define(
-['config', 'bigl', 'stapes', 'googlemaps', 'sv_svc'],
-function(config, L, Stapes, GMaps, sv_svc) {
+['config', 'bigl', 'stapes','mergemaps','sv_svc'],
+function(config, L, Stapes, XMaps, sv_svc) {
 
   var SEARCH_FAIL_BALLOON_TIME = 1100;
 
@@ -26,13 +26,14 @@ function(config, L, Stapes, GMaps, sv_svc) {
 
       this.map = map;
 
-      this.search_fail_balloon = new GMaps.InfoWindow({
+      this.search_fail_balloon = new XMaps.InfoWindow({
         content: '<img src="icons/sv_fail.png" height="40" width="40" />',
-        disableAutoPan: true
+        disableAutoPan: true,
+        map: this.map
       });
       this.ballon_close_timeout = null;
 
-      GMaps.event.addListener(this.map, 'click', function(event) {
+      XMaps.addListener(this.map, 'click', function(event) {
         self.close_search_fail_balloon();
 
         // determine min/max search radius based on zoom level
@@ -55,13 +56,14 @@ function(config, L, Stapes, GMaps, sv_svc) {
           max_search_radius = 200;
         }
 
-        console.debug('min', min_search_radius, 'max', max_search_radius);
-
+        console.debug('min', min_search_radius, 'max', max_search_radius);        
+        var pos = XMaps.getEventPos(event); // event.latLng
+    
         sv_svc.getPanoramaByLocation(
-          event.latLng,
+          pos,
           min_search_radius,
           function(data, stat, search_latlng) {
-            if(stat == GMaps.StreetViewStatus.OK) {
+            if(stat == XMaps.StreetViewStatus.OK) {
               self.emit('search_result', data);
             } else {
               self.open_search_fail_balloon(search_latlng);
@@ -74,11 +76,9 @@ function(config, L, Stapes, GMaps, sv_svc) {
 
     open_search_fail_balloon: function(latlng) {
       var self = this;
-
       this.close_search_fail_balloon();
-
-      this.search_fail_balloon.setPosition(latlng);
-      this.search_fail_balloon.open(this.map);
+      this.search_fail_balloon.openInfoWindow(this.map,latlng);
+    //this.search_fail_balloon.open(this.map);
 
       this.balloon_close_timeout = setTimeout(
         function() {
@@ -90,7 +90,7 @@ function(config, L, Stapes, GMaps, sv_svc) {
 
     close_search_fail_balloon: function() {
       clearTimeout(this.balloon_close_timeout);
-      this.search_fail_balloon.close();
+      this.search_fail_balloon.closeInfoWindow(this.map);
     },
   });
 

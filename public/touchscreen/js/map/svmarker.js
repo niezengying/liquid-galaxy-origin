@@ -15,30 +15,41 @@
 */
 
 define(
-['config', 'bigl', 'stapes', 'googlemaps'],
-function(config, L, Stapes, GMaps) {
+['config', 'bigl', 'stapes', 'mergemaps'],
+function(config, L, Stapes, XMaps) {
 
   var MIN_COVERAGE_ZOOM_LEVEL = 14;
 
   var SVMarkerModule = Stapes.subclass({
     constructor: function(map) {
       this.map = map;
+      this.default_center = new XMaps.LatLng(
+        config.touchscreen.default_center[XMaps.apiProvider - 1].lat,
+        config.touchscreen.default_center[XMaps.apiProvider - 1].lng
+      );
 
-      this.sv_marker = new GMaps.Marker({
+      this.markerOpt = {
+        map: this.map,
         position: this.default_center,
         title: 'Street View',
         icon: 'icons/sv_sprite.png',
-        clickable: false
-      });
-    },
+        clickable: false,
+        enableClicking: false
+      };
+      
+      this.sv_marker = new XMaps.Marker(this.markerOpt);      
+      this.map.addOverlay(this.sv_marker); 
+      //this.sv_marker.setMap(this.map);
 
+    },
+  
     move: function(latlng) {
       this.sv_marker.setPosition(latlng);
       this.sv_marker.setMap(this.map);
     },
 
     hide: function() {
-      this.sv_marker.setMap(null);
+     this.sv_marker.removeMap(this.map);
     }
   });
 

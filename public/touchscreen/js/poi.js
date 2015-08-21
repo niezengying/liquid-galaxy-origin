@@ -92,7 +92,7 @@ function(config, L, Stapes, $, leftUI, doT) {
       }
 
       var poi_div = this.template(categories);
-
+      
       leftUI.prepend(poi_div);
 
       $('.poi-tab-inactive').on('click', function(e) {
@@ -100,7 +100,7 @@ function(config, L, Stapes, $, leftUI, doT) {
       });
 
       $('.poi-item').each(function(index, item) {
-        self.emit('add_location', $(item).attr('panoid'));
+          self.emit('add_location', $(item).attr('panoid'));
       });
 
       this._activate($('.poi-tab-inactive').first());
@@ -130,6 +130,13 @@ function(config, L, Stapes, $, leftUI, doT) {
       $('.poi-tab-active').attr('class', 'poi-tab-inactive');
       $('.poi-list-active').attr('class', 'poi-list-inactive');
       $('.poi-item').off('click');
+    },
+    
+    _pvdname2id: function(pvdname){
+      if('google' == pvdname) return 0;
+      else if('tencent' == pvdname) return 1;
+      else if('baidu' == pvdname) return 2;
+      else return 0;
     },
 
     _clicked: function(loc) {

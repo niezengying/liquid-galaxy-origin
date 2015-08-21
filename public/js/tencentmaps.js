@@ -1,6 +1,5 @@
-<!DOCTYPE html>
-<!--
-** Copyright 2013 Google Inc.
+/*
+** Copyright 2014 Google Inc.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -13,19 +12,8 @@
 ** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ** See the License for the specific language governing permissions and
 ** limitations under the License.
--->
-<html>
-  <head>
-    <title>Peruse-a-Rue</title>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="/stylesheets/display.css" />
-  </head>
-  <body>
-    <noscript>
-      <div><p>ERROR: JavaScript not activated</p></div>
-    </noscript>
-    <div name="pano" id="pano"></div>
-	<script data-main="js/main" src="/js/lib/require/require.min.js"></script>
-  </body>
-</html>
+*/
+
+define([], function() {
+  return qq.maps;
+});

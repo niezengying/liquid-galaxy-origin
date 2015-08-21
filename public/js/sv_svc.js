@@ -14,9 +14,9 @@
 ** limitations under the License.
 */
 
-define(['googlemaps'], function(GMaps) {
+define(['googlemaps','mergemaps'], function(GMaps,XMaps) {
   // provide StreetViewService as a singleton in this module
-  var sv_svc = new GMaps.StreetViewService();
+  var sv_svc = new XMaps.StreetViewService();
 
   // extensions to getPanoramaByLocation:
   // optional expansion to max_radius
@@ -38,7 +38,7 @@ define(['googlemaps'], function(GMaps) {
 
   // recursive callback for expanding search
   function expandingCB(data, stat) {
-    if (stat == GMaps.StreetViewStatus.OK) {
+    if (stat == XMaps.StreetViewStatus.OK) {
       // success
       this.cb(data, stat, this.latlng);
 
@@ -64,14 +64,18 @@ define(['googlemaps'], function(GMaps) {
     delete this;
   }
 
+        
   // make StreetViewPanoramaData friendlier
-  function serializePanoData(panoData) {
-    panoData.location.latLng = {
+   function serializePanoData(panoData) {
+     if(XMaps.Apiprovider == 1){
+      panoData.location.latLng = XMaps.LatLng({
       lat: panoData.location.latLng.lat(),
       lng: panoData.location.latLng.lng()
-    };
-  }
-
+      });
+     }
+  } 
+   
+  
   return {
     // passthrough ID search
     getPanoramaById: sv_svc.getPanoramaById,

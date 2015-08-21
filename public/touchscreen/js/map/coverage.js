@@ -15,10 +15,10 @@
 */
 
 define(
-['config', 'bigl', 'stapes', 'googlemaps'],
-function(config, L, Stapes, GMaps) {
+['config', 'bigl', 'stapes','mergemaps'],
+function(config, L, Stapes,  XMaps) {
 
-  var MIN_COVERAGE_ZOOM_LEVEL = 14;
+  var MIN_COVERAGE_ZOOM_LEVEL = config.touchscreen.zoom[XMaps.apiProvider-1];
 
   var SVCoverageModule = Stapes.subclass({
     constructor: function(map) {
@@ -27,10 +27,10 @@ function(config, L, Stapes, GMaps) {
       this.map = map;
 
       // instantiate street view coverage layer
-      this.sv_coverage_layer = new GMaps.StreetViewCoverageLayer();
+      this.sv_coverage_layer = new XMaps.StreetViewCoverageLayer();
 
       // enable/disable map coverage layer based on zoom level
-      GMaps.event.addListener(this.map, 'zoom_changed', function(event) {
+      XMaps.addListener(this.map, 'zoom_changed', function(event) {
         if (self.map.getZoom() >= MIN_COVERAGE_ZOOM_LEVEL)
           self._show_coverage_layer();
         else
@@ -38,18 +38,20 @@ function(config, L, Stapes, GMaps) {
       });
 
       // signal that the map is ready
-      GMaps.event.addListenerOnce(this.map, 'idle', function() {
+      XMaps.addListenerOnce(this.map, 'idle', function() {
         // trigger a zoom change
-        GMaps.event.trigger(self.map, 'zoom_changed');
+         XMaps.trigger(self.map, 'zoom_changed');
       });
     },
 
     _show_coverage_layer: function() {
       this.sv_coverage_layer.setMap(this.map);
+  // XMaps.coverSetMap(this.sv_coverage_layer,this.map);
     },
 
     _hide_coverage_layer: function() {
-      this.sv_coverage_layer.setMap(null);
+      this.sv_coverage_layer.removeMap(this.map);
+   // XMaps.coverSetMap(this.sv_coverage_layer,null);
     },
   });
 

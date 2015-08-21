@@ -30,7 +30,8 @@ requirejs.config({
     'doT': '/js/lib/doT/doT.min',
     'socketio': '/socket.io/socket.io',
     'googlemaps': '/js/googlemaps',
-    'sv_svc': '/js/sv_svc'
+    'sv_svc': '/js/sv_svc',
+  'mergemaps': '/js/mergemaps'
   },
   shim: {
     'config': { exports: 'config' },
@@ -38,7 +39,12 @@ requirejs.config({
       deps: [
         'async!http://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false!callback'
       ]
-    }
+    },
+  'baidumaps': {
+      deps: [
+       'async!http://api.map.baidu.com/api?v=2.0&ak=NkArbcs6kW74wrlpZcTNHU2g&sensor=false!callback'
+      ]
+  }
   },
   map: {
     '*': { 'jquery': 'jquery-private' },
@@ -127,10 +133,7 @@ function(
   poi.init();
 
   photospheres.init();
-  
-  if(config.touchscreen.show_activities == true){
-      activities.init();
-  }
-  
+
+  activities.init();
 
 });

@@ -62,8 +62,6 @@ defaults when the server starts.
 
 - `config['earth_pos_url']` : json data representing Earth's last position
 
-- `config['always_revert_to_default_pano']` : if set to true, when leaving earth enter streetview at `config['display']['default_pano']` (default false)
-
 - `config['touchscreen']['poi_url']` : url to touchscreen locations, comma seperated values for multiple URL's.
 
 - `config['touchscreen']['default_center']` : [lat,lng]
@@ -76,16 +74,14 @@ defaults when the server starts.
 
 - `config['touchscreen']['show_maptypectl']` : control for road/satellite map
 
-- `config['touchscreen']['show_activities']` : show/hide "Other Activities" box 
-
 - `config['touchscreen']['font_scale']` : scale fonts by this ratio
 
 - `config['touchscreen']['default_maptype']` : sets the map imagery style
   - See the [MapTypeId][maptypeid] reference for supported map styles
   
-- `config['touchscreen']['expand_poi']` : Expands the "Points of Interest" Section
+- `config['touchscreen']['show_poi']` : Opens the "Points of Interest" Section
 
-- `config['touchscreen']['expand_activities']` : Expands the "Other Activities" Section
+- `config['touchscreen']['show_other_activities']` : Opens the "Other Activities" Section
 
 - `config['display']['default_pano']` : panoid to start with
 

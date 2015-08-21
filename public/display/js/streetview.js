@@ -15,8 +15,8 @@
 */
 
 define(
-['config', 'bigl', 'validate', 'stapes', 'googlemaps', 'sv_svc'],
-function(config, L, validate, Stapes, GMaps, sv_svc) {
+['config', 'bigl', 'validate', 'stapes','mergemaps','sv_svc'],
+function(config, L, validate, Stapes, XMaps, sv_svc) {
   var StreetViewModule = Stapes.subclass({
 
     // street view horizontal field of view per zoom level
@@ -76,20 +76,25 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       var self = this;
 
       // *** ensure success of Maps API load
-      if (typeof GMaps === 'undefined') L.error('Maps API not loaded!');
+      if (typeof XMaps === 'undefined') L.error('Maps API not loaded!');
 
       // *** initial field-of-view
       this._resize();
 
       // *** create a local streetview query object
-      this.sv_svc = new GMaps.StreetViewService();
+      this.sv_svc = new XMaps.StreetViewService();
 
       // *** options for the map object
       // the map will never be seen, but we can still manipulate the experience
       // with these options.
+      this.default_center = new XMaps.LatLng(
+        config.touchscreen.default_center[XMaps.apiProvider - 1].lat,
+        config.touchscreen.default_center[XMaps.apiProvider - 1].lng
+      );
+      
       var mapOptions = {
         disableDefaultUI: true,
-        center: new GMaps.LatLng(45,45),
+        center: this.default_center,
         backgroundColor: "black",
         zoom: 8
       };
@@ -98,7 +103,9 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       var svOptions = {
         visible: true,
         disableDefaultUI: true,
-        scrollwheel: false
+        scrollwheel: false,
+        navigationControl: false,
+        linksControl: false
       };
 
       // *** only show links on the master display
@@ -107,13 +114,15 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       }
 
       // *** init map object
-      this.map = new GMaps.Map(
+      this.map = new XMaps.Map(
         this.$canvas,
         mapOptions
       );
+      
+      this.map.centerAndZoom(mapOptions.center,mapOptions.zoom);
 
       // *** init streetview object
-      this.streetview = new GMaps.StreetViewPanorama(
+      this.streetview = new XMaps.StreetViewPanorama(
         this.$canvas,
         svOptions
       );
@@ -121,20 +130,22 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       // *** init streetview pov
       this.streetview.setPov({
         heading: 0,
-        pitch: 0,
-        zoom: this.zoom
+        pitch: 0
       });
+      
+      this.streetview.setZoom(this.zoom);
+      this.streetview.setPano(config.display.default_pano[XMaps.apiProvider-1]);
 
       // *** set the display mode as specified in global configuration
       this.streetview.setOptions({ mode: this.mode });
 
       // *** apply the custom streetview object to the map
-      this.map.setStreetView( this.streetview );
+
 
       // *** events for master only
       if (this.master) {
         // *** handle view change events from the streetview object
-        GMaps.event.addListener(this.streetview, 'pov_changed', function() {
+       XMaps.addListener(this.streetview, 'pov_changed', function() {
           var pov = self.streetview.getPov();
 
           self._broadcastPov(pov);
@@ -142,7 +153,7 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
         });
 
         // *** handle pano change events from the streetview object
-        GMaps.event.addListener(this.streetview, 'pano_changed', function() {
+       XMaps.addListener(this.streetview, 'pano_changed', function() {
           var panoid = self.streetview.getPano();
 
           if (panoid != self.pano) {
@@ -154,7 +165,7 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       }
 
       // *** disable <a> tags at the bottom of the canvas
-      GMaps.event.addListenerOnce(this.map, 'idle', function() {
+     XMaps.addListenerOnce(this.map, 'idle', function() {
         var links = self.$canvas.getElementsByTagName("a");
         var len = links.length;
         for (var i = 0; i < len; i++) {
@@ -169,7 +180,7 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       });
 
       // *** wait for an idle event before reporting module readiness
-      GMaps.event.addListenerOnce(this.map, 'idle', function() {
+      XMaps.addListenerOnce(this.map, 'idle', function() {
         console.debug('StreetView: ready');
         self.emit('ready');
       });
@@ -184,10 +195,10 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
     // switch to the provided pano, immediately
     setPano: function(panoid) {
       if (!validate.panoid(panoid)) {
-        L.error('StreetView: bad panoid to setPano!');
+        L.error('StreetView: bad panoid to setPano: panoid!');
         return;
       }
-
+    
       if (panoid != this.streetview.getPano()) {
         this.pano = panoid;
         this.streetview.setPano(panoid);
@@ -197,7 +208,7 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       }
     },
 
-    // *** setPov(GMaps.StreetViewPov)
+    // *** setPov(XMaps.StreetViewPov)
     // set the view to the provided pov, immediately
     setPov: function(pov) {
       if (!validate.number(pov.heading) || !validate.number(pov.pitch)) {
@@ -208,7 +219,7 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       this.streetview.setPov(pov);
     },
 
-    // *** restPov(Gmaps.StreetViewPov)
+    // *** restPov(Xmaps.StreetViewPov)
     // reset the pitch for the provided pov
     resetPov: function() {
       if (! this.master) {
@@ -253,8 +264,9 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       console.log('moving forward');
       var forward = this._getForwardLink();
       if(forward) {
-        this.setPano(forward.pano);
-        this._broadcastPano(forward.pano);
+        var fwpano = ((null == forward.pano)?forward.id:forward.pano);
+        this.setPano(fwpano);
+        this._broadcastPano(fwpano);
       } else {
         console.log("can't move forward, no links!");
       }
@@ -271,7 +283,7 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       console.debug('StreetView: resize', this.hfov, this.vfov);
     },
 
-    // *** _broadcastPov(GMaps.StreetViewPov)
+    // *** _broadcastPov(XMaps.StreetViewPov)
     // report a pov change to listeners
     _broadcastPov: function(pov) {
       this.emit('pov_changed', pov);
@@ -286,7 +298,7 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
       sv_svc.getPanoramaById(
         panoid,
         function (data, stat) {
-          if (stat == GMaps.StreetViewStatus.OK) {
+          if (stat == XMaps.StreetViewStatus.OK) {
             sv_svc.serializePanoData(data);
             self.emit('meta', data);
           }
@@ -295,8 +307,8 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
     },
 
     // *** _getLinkDifference(
-    //                         GMaps.StreetViewPov,
-    //                         GMaps.StreetViewLink
+    //                         XMaps.StreetViewPov,
+    //                         XMaps.StreetViewLink
     //                       )
     // return the difference between the current heading and the provided link
     _getLinkDifference: function(pov, link) {
@@ -310,7 +322,7 @@ function(config, L, validate, Stapes, GMaps, sv_svc) {
 
     // *** _getForwardLink()
     // return the link nearest the current heading
-    _getForwardLink: function() {
+    _getForwardLink: function(){
       var pov = this.streetview.getPov();
       var links = this.streetview.getLinks();
       var len = links.length;
